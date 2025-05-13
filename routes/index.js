@@ -6,10 +6,15 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
 router.get('/trivia', async (req, res) => {
   try {
-    const response = await axios.get('https://opentdb.com/api.php?amount=1&type=multiple');
-    const questionData = response.data.results[0];
+    const response = await fetch('https://opentdb.com/api.php?amount=50');
+    const data = await response.json();
+    const questionData = data.results[0];
 
     res.json({
       question: questionData.question,
@@ -23,9 +28,5 @@ router.get('/trivia', async (req, res) => {
     res.status(500).send('Failed to fetch trivia');
   }
 });
-
-function shuffle(array) {
-  return array.sort(() => Math.random() - 0.5);
-}
 
 module.exports = router;
