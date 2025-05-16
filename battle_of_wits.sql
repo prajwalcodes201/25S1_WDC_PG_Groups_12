@@ -83,7 +83,7 @@ CREATE TABLE PlayerAchievements (
 CREATE TABLE PlayerStats (
     player_id INT PRIMARY KEY,
     total_score INT DEFAULT 0,
-    rank VARCHAR(50),
+    player_rank VARCHAR(50),
     game_time INT,
     FOREIGN KEY (player_id) REFERENCES Players(player_id)
 );
