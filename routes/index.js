@@ -24,4 +24,6 @@ router.get('/trivia', async (req, res) => {
   }
 });
 
+
+
 module.exports = router;

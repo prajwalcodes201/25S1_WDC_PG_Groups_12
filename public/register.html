@@ -23,16 +23,33 @@
     <p class="text-center mt-3">Already have an account?
     <a href="login.html">Login here</a></p>
 
-  <script>
-    document.getElementById('registerForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const username = document.getElementById('regUsername').value;
-      const password = document.getElementById('regPassword').value;
+<script>
+  document.getElementById('registerForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-      localStorage.setItem(`user_${username}`, password);
-      alert('Registration successful! Please login.');
-      window.location.href = 'login.html';
-    });
-  </script>
+    const username = document.getElementById('regUsername').value;
+    const password = document.getElementById('regPassword').value;
+
+    try {
+      const response = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.ok) {
+        alert('register success');
+        window.location.href = 'login.html';
+      } else {
+        const errorText = await response.text();
+        alert('register failed:' + errorText);
+      }
+    } catch (error) {
+      console.error('requirement error', error);
+      alert('error internet');
+    }
+  });
+</script>
+
 </body>
 </html>
