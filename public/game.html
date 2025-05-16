@@ -29,7 +29,7 @@
     const category = params.get("category") || "";
 
     // set API URL
-    let apiUrl = `https://opentdb.com/api.php?amount=${amount}&encoding=base64`;
+    let apiUrl = `/trivia?amount=${amount}`;
     if (difficulty) apiUrl += `&difficulty=${difficulty}`;
     if (type) apiUrl += `&type=${type}`;
     if (category) apiUrl += `&category=${category}`;
