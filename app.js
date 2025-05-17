@@ -11,10 +11,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(session({
-  secret: 'your-secret-key', // 换成你自己的随机字符串
+  secret: 'your-secret-key',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // true 只在 HTTPS 下传输
+  cookie: { secure: false }
 }));
 var mysql = require('mysql');
 var bcrypt = require('bcrypt');
@@ -33,7 +33,7 @@ dbConnectionPool.getConnection((err, connection) => {
     console.error('❌ MySQL connection failed:', err.message);
   } else {
     console.log('✅ MySQL connection successful!');
-    connection.release(); // return connection to pool
+    connection.release();
   }
 });
 
@@ -45,11 +45,11 @@ app.post('/register', async (req, res) => {
   return dbConnectionPool.query(query, [username, password_hash], (err, results) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(400).send('用户名已存在');
+        return res.status(400).send('username exists');
       }
-      return res.status(500).send('注册失败');
+      return res.status(500).send('register failed');
     }
-    return res.send('注册成功'); // ✅ 明确 return
+    return res.send('register success'); //
   });
 });
 
@@ -59,12 +59,12 @@ app.post('/login', (req, res) => {
   const query = 'SELECT * FROM Users WHERE username = ?';
   dbConnectionPool.query(query, [username], async (err, results) => {
     if (err) {
-      res.status(500).send('数据库错误');
+      res.status(500).send('database error');
       return;
     }
 
     if (results.length === 0) {
-      res.status(401).send('用户不存在');
+      res.status(401).send('username not found');
       return;
     }
 
@@ -76,18 +76,18 @@ app.post('/login', (req, res) => {
         user_id: user.user_id,
         username: user.username
       };
-      res.send('登录成功');
+      res.send('login success');
     } else {
-      res.status(401).send('密码错误');
+      res.status(401).send('password incorrect');
     }
   });
 });
 
 app.get('/check-login', (req, res) => {
   if (req.session.user) {
-    res.send(`当前已登录用户：${req.session.user.username}`);
+    res.send(`login user:${req.session.user.username}`);
   } else {
-    res.status(401).send('未登录');
+    res.status(401).send('not logged in');
   }
 });
 

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Battle of Wits Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="header">Hello, <span id="usernameDisplay"></span> 👋 Ready to battle today?</div>
+
+  <!-- Game Summary -->
+  <div class="grid grid-3">
+    <div class="card">
+      <h2>Total Games Played</h2>
+      <p class="stat" id="gamesPlayed">0</p>
+    </div>
+    <div class="card">
+      <h2>Total Points Earned</h2>
+      <p class="stat" id="totalPoints">0</p>
+    </div>
+    <div class="card">
+      <h2>Start a New Game</h2>
+      <button type="button" class="btn" onclick="goToGame()">🎮 Single Player</button>
+    </div>
+  </div>
+
+  <!-- Profile & Sessions -->
+  <div class="grid grid-2 margin-top">
+    <div class="card profile">
+      <div class="profile-info">
+        <img src="https://via.placeholder.com/60" alt="avatar"/>
+        <div>
+          <p><strong id="usernameCard"></strong></p>
+          <p id="levelInfo">Level 1</p>
+          <p id="pointInfo">0 Points</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Game Sessions</h2>
+      <table>
+        <thead><tr><th>Mode</th><th>Opponent</th><th>Result</th></tr></thead>
+        <tbody id="sessionTable">
+          <tr><td colspan="3">No history</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Progress and Achievements -->
+  <div class="grid grid-2 margin-top">
+    <div class="card">
+      <h2>Your Progress</h2>
+      <p>Win/Loss</p>
+      <div class="bar"><div class="bar-inner" id="winBar"></div></div>
+      <p class="margin-top">Game Time: <strong id="gameTime">0h 0m</strong></p>
+    </div>
+    <div class="card">
+      <h2>Achievements</h2>
+      <ul id="achievementList">
+        <li>First Win</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Logout Button -->
+  <div class="grid margin-top">
+    <button type='button' class="btn btn-danger w-100" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const username = localStorage.getItem('username') || 'Guest';
+    document.getElementById('usernameDisplay').innerText = username;
+    document.getElementById('usernameCard').innerText = username;
+
+    const catMap = {
+      '9': 'General Knowledge', '10': 'Books & Literature', '11': 'Movies', '12': 'Music',
+      '13': 'Musicals & Theatre', '14': 'TV Shows', '15': 'Video Games', '16': 'Board Games',
+      '17': 'Science & Nature', '18': 'Computers & Tech', '19': 'Mathematics', '20': 'Mythology',
+      '21': 'Sports', '22': 'Geography', '23': 'History', '24': 'Politics', '25': 'Art & Design',
+      '26': 'Celebrities', '27': 'Animals', '28': 'Vehicles', '29': 'Comics', '30': 'Gadgets & Tech',
+      '31': 'Anime & Manga', '32': 'Cartoons & Animation'
+    };
+
+    const stats = JSON.parse(localStorage.getItem(`stats_${username}`) || '{}');
+    document.getElementById('gamesPlayed').innerText = stats.gamesPlayed || 0;
+    document.getElementById('totalPoints').innerText = stats.totalPoints || 0;
+    document.getElementById('pointInfo').innerText = `${stats.totalPoints || 0} Points`;
+    document.getElementById('levelInfo').innerText = `Level ${stats.level || 1}`;
+    document.getElementById('gameTime').innerText = stats.gameTime || '0h 0m';
+
+    const sessions = stats.sessions || [];
+    const table = document.getElementById('sessionTable');
+    if (sessions.length) {
+      table.innerHTML = '';
+      sessions.forEach(s => {
+        const tr = document.createElement('tr');
+        let modeText = s.mode === 'category'
+          ? `Category: ${catMap[s.category] || 'Unknown'}`
+          : 'Random Quiz';
+        tr.innerHTML = `<td>${modeText}</td><td>${s.opponent}</td><td>${s.result} (${s.time || ''})</td>`;
+        table.appendChild(tr);
+      });
+    }
+
+    const winRatio = stats.winRate || 0;
+    document.getElementById('winBar').style.width = `${Math.floor(winRatio * 100)}%`;
+
+    const achievementList = document.getElementById('achievementList');
+    const achievements = stats.achievements || [];
+    achievements.forEach(a => {
+      const li = document.createElement('li');
+      li.innerText = a;
+      achievementList.appendChild(li);
+    });
+
+    function goToGame() {
+      window.location.href = 'index.html';
+    }
+
+    function logout() {
+      if (!window.confirm('Are you sure you want to log out?')) return;
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

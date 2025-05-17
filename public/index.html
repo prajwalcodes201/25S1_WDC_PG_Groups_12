@@ -7,90 +7,133 @@
 </head>
 <body class="bg-dark text-light">
   <div class="container mt-5">
-    <h2>Hello, <span id="usernameDisplay"></span>!</h2>
+    <h2>Welcome back, <span id="usernameDisplay"></span>!</h2>
 
-
-    <form id="apiForm" class="bg-secondary p-4 rounded mt-3">
+    <form id="levelForm" class="bg-secondary p-4 rounded mt-3">
       <div class="mb-3">
-        <label class="form-label">Number of Questions:</label>
-        <input type="number" name="amount" class="form-control" value="5" required>
+        <label class="form-label">Select Mode:</label>
+        <select name="mode" class="form-select" required>
+          <option value="random">Random (any category)</option>
+          <option value="category">Category Challenge</option>
+        </select>
       </div>
 
       <div class="mb-3">
         <label class="form-label">Select Category:</label>
         <select name="category" class="form-select">
-          <option value="">Any</option>
-          <option value="10">General Knowledge</option>
-          <option value="11">Entertainment: Film</option>
+          <option value="">Random Categories</option>
+          <option value="9">General Knowledge</option>
+          <option value="10">Books & Literature</option>
+          <option value="11">Movies</option>
+          <option value="12">Music</option>
+          <option value="13">Musicals & Theatre</option>
+          <option value="14">TV Shows</option>
+          <option value="15">Video Games</option>
+          <option value="16">Board Games</option>
           <option value="17">Science & Nature</option>
-          <option value="18">Science: Computers</option>
+          <option value="18">Computers & Tech</option>
+          <option value="19">Mathematics</option>
+          <option value="20">Mythology</option>
+          <option value="21">Sports</option>
+          <option value="22">Geography</option>
+          <option value="23">History</option>
+          <option value="24">Politics</option>
+          <option value="25">Art & Design</option>
+          <option value="26">Celebrities</option>
+          <option value="27">Animals</option>
+          <option value="28">Vehicles</option>
+          <option value="29">Comics</option>
+          <option value="30">Gadgets & Tech</option>
+          <option value="31">Anime & Manga</option>
+          <option value="32">Cartoons & Animation</option>
         </select>
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Select Difficulty:</label>
-        <select name="difficulty" class="form-select">
-          <option value="">Any</option>
-          <option value="easy">Easy</option>
-          <option value="medium" selected>Medium</option>
-          <option value="hard">Hard</option>
+        <label class="form-label">Select Level (1-10):</label>
+        <select name="level" class="form-select" required>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+          <option value="5">Level 5</option>
+          <option value="6">Level 6</option>
+          <option value="7">Level 7</option>
+          <option value="8">Level 8</option>
+          <option value="9">Level 9</option>
+          <option value="10">Level 10</option>
         </select>
       </div>
-
-      <div class="mb-3">
-        <label class="form-label">Select Type:</label>
-        <select name="type" class="form-select">
-          <option value="">Any</option>
-          <option value="multiple">Multiple Choice</option>
-          <option value="boolean">True / False</option>
-        </select>
-      </div>
-
-
-      <input type="hidden" name="mode" value="solo">
 
       <button type="submit" class="btn btn-light w-100">Start Game</button>
     </form>
 
-    <button type="button" onclick="logout()" class="btn btn-danger w-100 mt-3">Logout</button>
+    <button type="button" onclick="goHome()" class="btn btn-warning w-100 mt-3">Return to Dashboard</button>
   </div>
 
-  <script>
+<script>
+  const username = localStorage.getItem('username');
+  if (!username) window.location.href = 'login.html';
+  document.getElementById('usernameDisplay').innerText = username;
 
-    const username = localStorage.getItem('username');
-    if (!username) {
-      window.location.href = 'login.html';
+  const modeSelect = document.querySelector('select[name="mode"]');
+  const categorySelect = document.querySelector('select[name="category"]');
+  const levelSelect = document.querySelector('select[name="level"]');
+
+  modeSelect.addEventListener('change', () => {
+    const isCategory = modeSelect.value === 'category';
+    categorySelect.disabled = !isCategory;
+    updateLockedLevels();
+  });
+  categorySelect.addEventListener('change', updateLockedLevels);
+
+  function updateLockedLevels() {
+    const mode = modeSelect.value;
+    const category = categorySelect.value;
+    const key = mode === 'random'
+      ? 'unlocked_level_random'
+      : `unlocked_level_category_${category || 'any'}`;
+
+    const unlockedLevel = parseInt(localStorage.getItem(key) || '1');
+    const options = levelSelect.options;
+
+    for (let i = 0; i < options.length; i++) {
+      const levelVal = parseInt(options[i].value);
+      if (levelVal > unlockedLevel) {
+        options[i].disabled = true;
+        options[i].innerText = `Level ${levelVal} Locked`;
+      } else {
+        options[i].disabled = false;
+        options[i].innerText = `Level ${levelVal}`;
+      }
     }
-    document.getElementById('usernameDisplay').innerText = username;
 
-
-    document.getElementById('apiForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const form = e.target;
-
-      const amount = form.amount.value;
-      const difficulty = form.difficulty.value;
-      const category = form.category.value;
-      const type = form.type.value;
-      const mode = form.mode.value;
-
-      const query = new URLSearchParams({
-        amount,
-        difficulty,
-        category,
-        type,
-        mode
-      }).toString();
-
-      window.location.href = 'game.html?' + query;
-    });
-
-    function logout() {
-    // ask the user to confirm logout
-    if (!window.confirm('Are you sure you want to log out?')) return;
-    localStorage.clear();
-    window.location.href = 'login.html';
+    levelSelect.value = unlockedLevel.toString();
   }
-  </script>
+
+  modeSelect.dispatchEvent(new Event('change'));
+
+  document.getElementById('levelForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const level = form.level.value;
+    const mode = form.mode.value;
+    const category = form.category.value;
+
+    const queryObj = { level, mode };
+    if (mode === 'category' && category) {
+      queryObj.category = category;
+    }
+
+    const query = new URLSearchParams(queryObj).toString();
+    window.location.href = 'game.html?' + query;
+  });
+
+  function goHome() {
+    window.location.href = 'dashboard.html';
+  }
+</script>
+
 </body>
 </html>

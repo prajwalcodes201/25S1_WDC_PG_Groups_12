@@ -6,39 +6,108 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-light">
-
   <div class="container mt-5 text-center">
     <h2>Game Over</h2>
     <p class="fs-4">Your Score: <span id="score"></span> / <span id="total"></span></p>
     <p class="fs-5">Difficulty: <span id="difficulty"></span></p>
     <p class="fs-5">Time Used: <span id="timeUsed"></span></p>
-    <button type="button" class="btn btn-primary mt-3" onclick="goHome()">Return to Home Page</button>
+    <p id="rankDisplay" class="fs-4 mt-3"></p>
+    <p id="unlockNotice" class="text-success fw-bold"></p>
+    <p id="bestRecord" class="text-info mt-4"></p>
+    <button type="button" class="btn btn-primary mt-4" onclick="goHome()">Return to Home Page</button>
   </div>
 
   <script>
-    // Get URL parameters
     const params = new URLSearchParams(window.location.search);
-    const score = params.get('score');
-    const total = params.get('total');
-    const difficulty = params.get('difficulty');
-    const timeUsedSeconds = parseInt(params.get('time') || '0');
+    const score = parseInt(params.get('score'));
+    const total = parseInt(params.get('total'));
+    const difficulty = params.get('difficulty') || '';
+    const timeUsed = parseInt(params.get('time') || '0');
+    const mode = params.get('mode') || 'random';
+    const category = params.get('category') || '';
+    const levelMatch = difficulty.match(/Level (\d+)/);
+    const level = levelMatch ? parseInt(levelMatch[1]) : 1;
 
-    // Convert to minutes and seconds
-    const minutes = Math.floor(timeUsedSeconds / 60);
-    const seconds = timeUsedSeconds % 60;
+    const minutes = Math.floor(timeUsed / 60);
+    const seconds = timeUsed % 60;
+    const timeText = `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
 
-    // Update page content
     document.getElementById('score').innerText = score;
     document.getElementById('total').innerText = total;
-    document.getElementById('difficulty').innerText = difficulty || 'N/A';
-    document.getElementById('timeUsed').innerText =
-      `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
+    document.getElementById('difficulty').innerText = `${difficulty}${mode === 'category' && category ? ' (Category #' + category + ')' : ''}`;
+    document.getElementById('timeUsed').innerText = timeText;
 
-    // Return to home page
+    const ratio = score / total;
+    let rank = 'F';
+    if (ratio >= 0.9) rank = 'S';
+    else if (ratio >= 0.8) rank = 'A';
+    else if (ratio >= 0.7) rank = 'B';
+    else if (ratio >= 0.6) rank = 'C';
+
+    document.getElementById('rankDisplay').innerHTML = `Get Your Rank: <span class="text-warning fw-bold">${rank}</span>`;
+
+    const bestKey = `best_${mode}_${category}_level${level}`;
+    const previous = JSON.parse(localStorage.getItem(bestKey) || 'null');
+    if (!previous || score > previous.score || (score === previous.score && timeUsed < previous.time)) {
+      localStorage.setItem(bestKey, JSON.stringify({ score, total, time: timeUsed }));
+    }
+
+    const bestDisplay = document.getElementById('bestRecord');
+    if (previous) {
+      const bestM = Math.floor(previous.time / 60);
+      const bestS = previous.time % 60;
+      bestDisplay.innerText = `Best (${mode === 'random' ? 'Random' : 'Category'}) Level ${level}: ${previous.score}/${previous.total} in ${bestM}m${bestS < 10 ? '0' : ''}${bestS}s`;
+    }
+
+    const unlockKey = mode === 'random'
+      ? 'unlocked_level_random'
+      : `unlocked_level_category_${category || 'any'}`;
+    const unlocked = parseInt(localStorage.getItem(unlockKey) || '1');
+    const unlockNotice = document.getElementById('unlockNotice');
+
+    if (score >= Math.ceil(0.7 * total) && level >= unlocked && level < 10) {
+      localStorage.setItem(unlockKey, level + 1);
+      unlockNotice.innerText = `Congratulations! Level ${level + 1} has been unlocked for ${mode === 'random' ? 'Random' : 'Category'} Mode!`;
+    }
+
+    // Stats recording
+    const username = localStorage.getItem('username') || 'guest';
+    const statsKey = `stats_${username}`;
+    const stats = JSON.parse(localStorage.getItem(statsKey) || '{}');
+
+    stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+    stats.totalPoints = (stats.totalPoints || 0) + score;
+    stats.level = Math.max(stats.level || 1, level);
+    stats.gameTime = mergeTime(stats.gameTime || '0h 0m', timeUsed);
+    const win = score >= Math.ceil(0.7 * total);
+    stats.wins = (stats.wins || 0) + (win ? 1 : 0);
+    stats.winRate = stats.wins / stats.gamesPlayed;
+    stats.sessions = stats.sessions || [];
+    stats.sessions.push({
+      mode,
+      category,
+      opponent: 'AI',
+      result: `${score}/${total}`,
+      time: timeText
+    });
+    stats.achievements = stats.achievements || [];
+    if (win && !stats.achievements.includes('🏅 First Win')) stats.achievements.push('🏅 First Win');
+    if (score === total && !stats.achievements.includes('🌟 Perfect Score')) stats.achievements.push('🌟 Perfect Score');
+
+    localStorage.setItem(statsKey, JSON.stringify(stats));
+
+    function mergeTime(oldStr, addedSec) {
+      const [h1, m1] = oldStr.match(/\d+/g).map(Number);
+      const oldSeconds = h1 * 3600 + m1 * 60;
+      const total = oldSeconds + addedSec;
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
+
     function goHome() {
-      window.location.href = "index.html";
+      window.location.href = "dashboard.html";
     }
   </script>
-
 </body>
 </html>

@@ -9,9 +9,7 @@
 
   <div class="container mt-5">
     <h2 class="text-center mb-4">Trivia Challenge</h2>
-
-    <div class="text-center mb-3">Time Remaining: <span id="timer">10:00</span></div>
-
+    <div class="text-center mb-3">Time Remaining: <span id="timer">--:--</span></div>
     <div id="questionBox" class="fs-5 fw-bold mb-3">Loading question...</div>
     <ul id="answerList" class="list-group mb-3"></ul>
     <div>Score: <span id="score">0</span></div>
@@ -19,8 +17,27 @@
   </div>
 
   <script>
-    // 10-minute countdown
-    let timeLeft = 10 * 60;
+    const params = new URLSearchParams(window.location.search);
+    const level = parseInt(params.get("level") || "1");
+    const mode = params.get("mode") || "random";
+    const category = params.get("category") || "";
+
+    // Level difficulty + time config
+    const levelConfigs = {
+      1:  { easy: 10, medium: 0,  hard: 0,  time: 6 * 60 },
+      2:  { easy: 8,  medium: 2,  hard: 0,  time: 5.5 * 60 },
+      3:  { easy: 6,  medium: 4,  hard: 0,  time: 5 * 60 },
+      4:  { easy: 4,  medium: 5,  hard: 1,  time: 4.5 * 60 },
+      5:  { easy: 2,  medium: 6,  hard: 2,  time: 4 * 60 },
+      6:  { easy: 0,  medium: 6,  hard: 4,  time: 3.5 * 60 },
+      7:  { easy: 0,  medium: 4,  hard: 6,  time: 3 * 60 },
+      8:  { easy: 0,  medium: 2,  hard: 8,  time: 2.5 * 60 },
+      9:  { easy: 0,  medium: 1,  hard: 9,  time: 2 * 60 },
+      10: { easy: 0,  medium: 0,  hard: 10, time: 1.5 * 60 }
+    };
+
+    const config = levelConfigs[level] || levelConfigs[1];
+    let timeLeft = Math.floor(config.time);
     const timerEl = document.getElementById('timer');
 
     function updateTimer() {
@@ -29,34 +46,25 @@
       timerEl.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    updateTimer();
-    const timerInterval = setInterval(() => {
-      timeLeft--;
-      if (timeLeft < 0) {
-        clearInterval(timerInterval);
-        alert('Time is up!');
-        window.location.href =
-          `result.html?score=${score}&total=${questions.length}&difficulty=${difficulty}`;
-        return;
-      }
+    let timerInterval;
+    function startTimer() {
       updateTimer();
-    }, 1000);
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft < 0) {
+          clearInterval(timerInterval);
+          alert('Time is up!');
+          const timeUsed = config.time;
+          window.location.href = `result.html?score=${score}&total=${questions.length}&difficulty=Level ${level}&time=${timeUsed}`;
+        } else {
+          updateTimer();
+        }
+      }, 1000);
+    }
 
     function decode(str) {
       return decodeURIComponent(escape(atob(str)));
     }
-
-    const params = new URLSearchParams(window.location.search);
-    const amount = params.get("amount") || 5;
-    const difficulty = params.get("difficulty") || "";
-    const type = params.get("type") || "";
-    const category = params.get("category") || "";
-
-    // set API URL
-    let apiUrl = `/trivia?amount=${amount}`;
-    if (difficulty) apiUrl += `&difficulty=${difficulty}`;
-    if (type) apiUrl += `&type=${type}`;
-    if (category) apiUrl += `&category=${category}`;
 
     let questions = [];
     let current = 0;
@@ -64,16 +72,30 @@
 
     async function startGame() {
       try {
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+        const urls = [];
+        const buildUrl = (amount, difficulty) => {
+          let url = `/trivia?amount=${amount}&difficulty=${difficulty}`;
+          if (mode === "category" && category) {
+            url += `&category=${category}`;
+          }
+          return url;
+        };
 
-        if (data.response_code !== 0 || !data.results.length) {
-          alert("⚠️ Failed to load trivia questions. Please try different settings.");
+        if (config.easy)   urls.push(buildUrl(config.easy, 'easy'));
+        if (config.medium) urls.push(buildUrl(config.medium, 'medium'));
+        if (config.hard)   urls.push(buildUrl(config.hard, 'hard'));
+
+        const responses = await Promise.all(urls.map(url => fetch(url).then(res => res.json())));
+        questions = responses.flatMap(r => r.results);
+        questions.sort(() => Math.random() - 0.5);
+
+        if (!questions.length) {
+          alert("⚠️ Failed to load trivia questions. Please try another level or category.");
           window.location.href = "index.html";
           return;
         }
 
-        questions = data.results;
+        startTimer();
         showQuestion();
       } catch (err) {
         alert("❌ Error fetching questions.");
@@ -83,19 +105,21 @@
 
     function showQuestion() {
       if (current >= questions.length) {
-        const timeUsed = (10 * 60) - timeLeft;
-        window.location.href = `result.html?score=${score}&total=${questions.length}&difficulty=${difficulty}&time=${timeUsed}`;
+        clearInterval(timerInterval);
+        const timeUsed = Math.floor(config.time - timeLeft);
+        window.location.href = `result.html?score=${score}&total=${questions.length}&difficulty=Level ${level}&time=${timeUsed}`;
         return;
       }
 
       const q = questions[current];
       const questionText = decode(q.question);
+      const categoryText = decode(q.category || '');
       const correct = decode(q.correct_answer);
       const options = q.type === "boolean"
         ? ["True", "False"]
         : [correct, ...q.incorrect_answers.map(decode)].sort(() => Math.random() - 0.5);
 
-      document.getElementById("questionBox").innerText = questionText;
+      document.getElementById("questionBox").innerText = `[${categoryText}] ${questionText}`;
       document.getElementById("qIndex").innerText = current + 1;
 
       const list = document.getElementById("answerList");
