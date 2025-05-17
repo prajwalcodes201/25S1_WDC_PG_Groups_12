@@ -91,7 +91,6 @@ app.get('/check-login', (req, res) => {
   }
 });
 
-
 app.use(function (req, res, next) {
   req.pool = dbConnectionPool;
   next();
