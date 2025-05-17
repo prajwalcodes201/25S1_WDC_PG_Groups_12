@@ -3,6 +3,7 @@ CREATE TABLE Users (
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL
 );
+
 CREATE TABLE Players (
     player_id INT PRIMARY KEY,
     given_name VARCHAR(100),
@@ -11,7 +12,6 @@ CREATE TABLE Players (
     password_hash VARCHAR(255) NOT NULL,
     current_level INT,
     country VARCHAR(100),
-    /* state, city, street, postcode */
     address VARCHAR(255),
     reward_points INT DEFAULT 0,
     introduction TEXT
