@@ -83,7 +83,8 @@
 
     function showQuestion() {
       if (current >= questions.length) {
-        window.location.href = `result.html?score=${score}&total=${questions.length}&difficulty=${difficulty}`;
+        const timeUsed = (10 * 60) - timeLeft;
+        window.location.href = `result.html?score=${score}&total=${questions.length}&difficulty=${difficulty}&time=${timeUsed}`;
         return;
       }
 
