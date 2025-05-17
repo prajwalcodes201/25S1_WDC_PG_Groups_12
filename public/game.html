@@ -9,6 +9,9 @@
 
   <div class="container mt-5">
     <h2 class="text-center mb-4">Trivia Challenge</h2>
+
+    <div class="text-center mb-3">Time Remaining: <span id="timer">10:00</span></div>
+
     <div id="questionBox" class="fs-5 fw-bold mb-3">Loading question...</div>
     <ul id="answerList" class="list-group mb-3"></ul>
     <div>Score: <span id="score">0</span></div>
@@ -16,11 +19,32 @@
   </div>
 
   <script>
+    // 10-minute countdown
+    let timeLeft = 10 * 60;
+    const timerEl = document.getElementById('timer');
+
+    function updateTimer() {
+      const m = Math.floor(timeLeft / 60);
+      const s = timeLeft % 60;
+      timerEl.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    updateTimer();
+    const timerInterval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft < 0) {
+        clearInterval(timerInterval);
+        alert('Time is up!');
+        window.location.href =
+          `result.html?score=${score}&total=${questions.length}&difficulty=${difficulty}`;
+        return;
+      }
+      updateTimer();
+    }, 1000);
 
     function decode(str) {
       return decodeURIComponent(escape(atob(str)));
     }
-
 
     const params = new URLSearchParams(window.location.search);
     const amount = params.get("amount") || 5;
@@ -59,7 +83,6 @@
 
     function showQuestion() {
       if (current >= questions.length) {
-        // end of game
         window.location.href = `result.html?score=${score}&total=${questions.length}&difficulty=${difficulty}`;
         return;
       }
